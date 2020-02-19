@@ -19,7 +19,7 @@ using Newtonsoft.Json;
 
 public static async Task<IActionResult> Run(HttpRequest req, ILogger log)
 {
-    log.LogInformation("C# HTTP trigger function processed a request.");
+    //log.LogInformation("C# HTTP trigger function processed a request.");
     
 
     string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
@@ -68,7 +68,7 @@ public static async Task<IActionResult> Run(HttpRequest req, ILogger log)
     irfs.features = fs;
     payload = JsonConvert.SerializeObject(irfs.features);                
                 
-    log.LogInformation(payload);
+    //log.LogInformation(payload);
     var value = new Dictionary<string, string>
     {
         { "features", payload },
