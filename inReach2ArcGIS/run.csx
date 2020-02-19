@@ -82,6 +82,11 @@ public static async Task<IActionResult> Run(HttpRequest req, ILogger log)
     String uri = destFeatureLayer+"/addFeatures";
     var result = await client.PostAsync(uri,stringContent);
     string resultContent = await result.Content.ReadAsStringAsync();
+    dynamic details = JsonConvert.DeserializeObject(resultContent);
+    if (details["error"] != null){
+        //log.LogInformation(resultContent);
+        return new BadRequestObjectResult(String.Format("The ArcGIS portal returned an error. {0}",resultContent));
+    }
     client = null;
     return new OkObjectResult(resultContent);
 }
