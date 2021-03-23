@@ -6,13 +6,11 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
-//using System.Text.Json.Serialization;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
 using Microsoft.Azure.WebJobs;
-//using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -23,20 +21,20 @@ public static async Task<IActionResult> Run(HttpRequest req, ILogger log)
     
 
     string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-    //log.LogInformation("Data received:\n"+requestBody);
     string destFeatureLayer = "https://services1.arcgis.com/1YRV70GwTj9GYxWK/ArcGIS/rest/services/inReach_log/FeatureServer/0";
+    
     string payload = "";
     if ( !requestBody.Contains("Events")){
         return new BadRequestObjectResult("This is not inReach Event data.");
     }
     
 
-    //TODO convert inReach json in requestBody to feature json
+    // convert request body to an inReachJson object (defined below)
     inReachJson inreach = JsonConvert.DeserializeObject<inReachJson>(requestBody);
-    inReachFeatures irfs = new inReachFeatures();
+    
     List<inReachFeature> fs = new List<inReachFeature>();
 
-    irfs.Version = inreach.Version;
+    
     foreach (inReachEvent e in inreach.Events){
         inReachFeature irf = new inReachFeature();
         irf.attributes = new inReachAttributes();
@@ -65,17 +63,19 @@ public static async Task<IActionResult> Run(HttpRequest req, ILogger log)
         irf.geometry.z = e.point.altitude;
         fs.Add(irf);
     }
-    irfs.features = fs;
-    payload = JsonConvert.SerializeObject(irfs.features);                
+     
+    //convert the inFeatures to a string
+    payload = JsonConvert.SerializeObject(fs);               
                 
-    //log.LogInformation(payload);
+    log.LogInformation(payload);
+    
+    //create the dictionary for the POST request to the feature service addFeatures endpoint
     var value = new Dictionary<string, string>
     {
         { "features", payload },
         { "f", "pjson" }
     };
-    var stringContent = new FormUrlEncodedContent(value);
-    
+    var stringContent = new FormUrlEncodedContent(value);    
     
 
     HttpClient client = new HttpClient();
@@ -130,12 +130,7 @@ public class inReachStatus
     public Int16 intervalChange { get; set;}
     public Int16 resetDetected { get; set;}
 
-}    
-
-public class inReachFeatures{
-    public String Version {get; set; }
-    public IList<inReachFeature> features {get; set; }
-}
+}  
 
 public class inReachFeature{
     public inReachAttributes attributes {get;set;}
